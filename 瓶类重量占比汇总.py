@@ -22,24 +22,24 @@ OUTPUT_SUFFIX = "_瓶类重量占比汇总"
 WEIGHT_HEADER = "重量占比"
 
 # 输出顺序：主料在前，杂料在后。未给出取数行号的类别保留为 0.00%。
-SUMMARY_RULES: list[tuple[str, list[tuple[int, int]]]] = [
+SUMMARY_RULES: list[tuple[str, str, list[tuple[int, int]]]] = [
     # 主料
-    ("白瓶", [(12, 12)]),
-    ("蓝瓶", [(18, 19), (30, 34)]),
-    ("绿瓶", [(16, 17)]),
-    ("二级白瓶", [(3, 11), (13, 15)]),
-    ("东方树叶", [(38, 40)]),
+    ("主料（估重）", "白瓶", [(12, 12)]),
+    ("主料（估重）", "蓝瓶", [(18, 19), (30, 34)]),
+    ("主料（估重）", "绿瓶", [(16, 17)]),
+    ("主料（估重）", "二级白瓶", [(3, 11), (13, 15)]),
+    ("主料（估重）", "东方树叶", [(38, 40)]),
     # 杂料
-    ("瓶盖泥沙", []),
-    ("杂质瓶", [(20, 25), (41, 51)]),
-    ("大油壶", [(35, 35)]),
-    ("小油壶", [(15, 15)]),
-    ("翻水瓶", []),
-    ("大小白HDPE", [(27, 29)]),
-    ("杂色乳白PET", [(36, 37)]),
-    ("翻包水", []),
-    ("铁丝", []),
-    ("铝口瓶", [(52, 52)]),
+    ("杂料（称重）", "瓶盖泥沙", []),
+    ("杂料（称重）", "杂质瓶", [(20, 25), (41, 51)]),
+    ("杂料（称重）", "大油壶", [(35, 35)]),
+    ("杂料（称重）", "小油壶", [(15, 15)]),
+    ("杂料（称重）", "翻水瓶", []),
+    ("杂料（称重）", "大小白HDPE", [(27, 29)]),
+    ("杂料（称重）", "杂色乳白PET", [(36, 37)]),
+    ("杂料（称重）", "翻包水", []),
+    ("杂料（称重）", "铁丝", []),
+    ("杂料（称重）", "铝口瓶", [(52, 52)]),
 ]
 
 
@@ -122,7 +122,7 @@ def create_summary_workbook(source_path: Path) -> tuple[Path, str, str]:
     result_book = Workbook()
     result_sheet = result_book.active
     result_sheet.title = "汇总结果"
-    result_sheet.append(["类别", "重量占比"])
+    result_sheet.append(["分类", "类别", "重量占比"])
     result_sheet.freeze_panes = "A2"
 
     header_fill = PatternFill("solid", fgColor="1F4E78")
@@ -132,29 +132,23 @@ def create_summary_workbook(source_path: Path) -> tuple[Path, str, str]:
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    for category, ranges in SUMMARY_RULES:
+    for group, category, ranges in SUMMARY_RULES:
         total = sum_ranges(source_sheet, weight_column, ranges)
-        result_sheet.append([category, total])
+        result_sheet.append([group, category, total])
 
     for row in range(2, result_sheet.max_row + 1):
-        result_sheet.cell(row, 2).number_format = "0.00%"
-    result_sheet.column_dimensions["A"].width = 22
-    result_sheet.column_dimensions["B"].width = 16
+        result_sheet.cell(row, 3).number_format = "0.00%"
 
-    notes = result_book.create_sheet("处理说明")
-    notes.append(["项目", "内容"])
-    notes.append(["输入文件", source_path.name])
-    notes.append(["来源工作表", sheet_name])
-    notes.append(["重量占比列", get_column_letter(weight_column)])
-    notes.append(["固定规则", "蓝瓶为第 18-19 行与第 30-34 行之和；未指定取数行号的类别按 0.00% 输出。"])
-    notes.column_dimensions["A"].width = 18
-    notes.column_dimensions["B"].width = 70
-    for cell in notes[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-    for row in notes.iter_rows():
-        for cell in row:
-            cell.alignment = Alignment(vertical="top", wrap_text=True)
+    # 第一列按用户指定的主料、杂料分组合并显示。
+    result_sheet.merge_cells("A2:A6")
+    result_sheet.merge_cells("A7:A16")
+    for cell in (result_sheet["A2"], result_sheet["A7"]):
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.font = Font(bold=True)
+
+    result_sheet.column_dimensions["A"].width = 18
+    result_sheet.column_dimensions["B"].width = 22
+    result_sheet.column_dimensions["C"].width = 16
 
     output_path = source_path.with_name(f"{source_path.stem}{OUTPUT_SUFFIX}.xlsx")
     try:
