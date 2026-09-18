@@ -24,9 +24,9 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.1
-          name: 瓶类重量占比汇总 v1.0.1
-          body: 结果表仅保留“类别、重量占比”两列的 Windows 双击运行版本。
+          tag_name: v1.0.2
+          name: 瓶类重量占比汇总 v1.0.2
+          body: 按主料、杂料顺序汇总；未对应取数行的类别自动输出 0.00% 的 Windows 双击运行版本。
           files: dist/瓶类重量占比汇总.exe
           overwrite_files: true
       - name: Upload executable artifact
