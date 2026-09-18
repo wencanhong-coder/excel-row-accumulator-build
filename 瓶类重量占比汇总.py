@@ -27,10 +27,10 @@ SUMMARY_RULES: list[tuple[str, list[tuple[int, int]]]] = [
     ("3A白瓶", [(12, 12)]),
     ("小油壶", [(15, 15)]),
     ("绿瓶", [(16, 17)]),
-    ("蓝瓶（18-19行）", [(18, 19)]),
+    ("蓝瓶", [(18, 19)]),
     ("其他", [(20, 25), (41, 51)]),
     ("PE", [(27, 29)]),
-    ("蓝瓶（30-34行）", [(30, 34)]),
+    ("蓝瓶", [(30, 34)]),
     ("大油壶", [(35, 35)]),
     ("杂色PET", [(36, 37)]),
     ("阻隔瓶", [(38, 40)]),
@@ -117,7 +117,7 @@ def create_summary_workbook(source_path: Path) -> tuple[Path, str, str]:
     result_book = Workbook()
     result_sheet = result_book.active
     result_sheet.title = "汇总结果"
-    result_sheet.append(["类别", "重量占比", "取数行号"])
+    result_sheet.append(["类别", "重量占比"])
     result_sheet.freeze_panes = "A2"
 
     header_fill = PatternFill("solid", fgColor="1F4E78")
@@ -129,10 +129,7 @@ def create_summary_workbook(source_path: Path) -> tuple[Path, str, str]:
 
     for category, ranges in SUMMARY_RULES:
         total = sum_ranges(source_sheet, weight_column, ranges)
-        range_text = "、".join(
-            str(start) if start == end else f"{start}-{end}" for start, end in ranges
-        )
-        result_sheet.append([category, total, range_text])
+        result_sheet.append([category, total])
 
     total_row = result_sheet.max_row + 1
     result_sheet.cell(total_row, 1, "汇总项合计")
@@ -144,7 +141,6 @@ def create_summary_workbook(source_path: Path) -> tuple[Path, str, str]:
         result_sheet.cell(row, 2).number_format = "0.00%"
     result_sheet.column_dimensions["A"].width = 22
     result_sheet.column_dimensions["B"].width = 16
-    result_sheet.column_dimensions["C"].width = 18
 
     notes = result_book.create_sheet("处理说明")
     notes.append(["项目", "内容"])
