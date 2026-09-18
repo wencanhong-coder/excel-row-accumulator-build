@@ -21,19 +21,24 @@ from openpyxl.utils import get_column_letter
 OUTPUT_SUFFIX = "_瓶类重量占比汇总"
 WEIGHT_HEADER = "重量占比"
 
-# 第 8 条与第 12 条均为第 30 至 34 行，故仅保留一次。
+# 输出顺序：主料在前，杂料在后。未给出取数行号的类别保留为 0.00%。
 SUMMARY_RULES: list[tuple[str, list[tuple[int, int]]]] = [
-    ("白瓶", [(3, 11), (13, 15)]),
-    ("3A白瓶", [(12, 12)]),
-    ("小油壶", [(15, 15)]),
+    # 主料
+    ("白瓶", [(12, 12)]),
+    ("蓝瓶", [(18, 19), (30, 34)]),
     ("绿瓶", [(16, 17)]),
-    ("蓝瓶", [(18, 19)]),
-    ("其他", [(20, 25), (41, 51)]),
-    ("PE", [(27, 29)]),
-    ("蓝瓶", [(30, 34)]),
+    ("二级白瓶", [(3, 11), (13, 15)]),
+    ("东方树叶", [(38, 40)]),
+    # 杂料
+    ("瓶盖泥沙", []),
+    ("杂质瓶", [(20, 25), (41, 51)]),
     ("大油壶", [(35, 35)]),
-    ("杂色PET", [(36, 37)]),
-    ("阻隔瓶", [(38, 40)]),
+    ("小油壶", [(15, 15)]),
+    ("翻水瓶", []),
+    ("大小白HDPE", [(27, 29)]),
+    ("杂色乳白PET", [(36, 37)]),
+    ("翻包水", []),
+    ("铁丝", []),
     ("铝口瓶", [(52, 52)]),
 ]
 
@@ -131,13 +136,7 @@ def create_summary_workbook(source_path: Path) -> tuple[Path, str, str]:
         total = sum_ranges(source_sheet, weight_column, ranges)
         result_sheet.append([category, total])
 
-    total_row = result_sheet.max_row + 1
-    result_sheet.cell(total_row, 1, "汇总项合计")
-    result_sheet.cell(total_row, 2, f"=SUM(B2:B{total_row - 1})")
-    result_sheet.cell(total_row, 1).font = Font(bold=True)
-    result_sheet.cell(total_row, 2).font = Font(bold=True)
-
-    for row in range(2, total_row + 1):
+    for row in range(2, result_sheet.max_row + 1):
         result_sheet.cell(row, 2).number_format = "0.00%"
     result_sheet.column_dimensions["A"].width = 22
     result_sheet.column_dimensions["B"].width = 16
@@ -147,7 +146,7 @@ def create_summary_workbook(source_path: Path) -> tuple[Path, str, str]:
     notes.append(["输入文件", source_path.name])
     notes.append(["来源工作表", sheet_name])
     notes.append(["重量占比列", get_column_letter(weight_column)])
-    notes.append(["固定规则", "第 8 条与第 12 条重复，仅输出一次第 30-34 行蓝瓶结果。"])
+    notes.append(["固定规则", "蓝瓶为第 18-19 行与第 30-34 行之和；未指定取数行号的类别按 0.00% 输出。"])
     notes.column_dimensions["A"].width = 18
     notes.column_dimensions["B"].width = 70
     for cell in notes[1]:
